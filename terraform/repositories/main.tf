@@ -1,15 +1,15 @@
-module "github_repository" {
+module "github_repository_no_template" {
   source = "../modules/github"
 
   project_name        = "example"
   project_description = "example"
 }
 
-module "github_repository2" {
+module "github_repository_template" {
   source = "../modules/github"
 
-  project_name        = "example2"
-  project_description = "example2"
+  project_name        = "example_public"
+  project_description = "example_public"
 
   project_visibility = "public"
 

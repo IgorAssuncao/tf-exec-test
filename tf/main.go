@@ -12,13 +12,13 @@ import (
 )
 
 type Terraform interface {
-	newTerraform() *tfexec.Terraform
-	Setup() *tfexec.Terraform
+	newTerraform() (*tfexec.Terraform, error)
+	Setup() error
 	Init() error
 	Plan() error
 	Apply() error
 	Destroy() error
-	Show(planOrApply string) (string, error)
+	Show() (string, error)
 }
 
 type TfConfig struct {
@@ -32,6 +32,8 @@ type Project struct {
 	TfConfig  TfConfig
 	tfBin     *tfexec.Terraform
 }
+
+var _ Terraform = &Project{}
 
 func (p *Project) newTerraform() (*tfexec.Terraform, error) {
 	installer := &releases.ExactVersion{

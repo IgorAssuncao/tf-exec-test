@@ -11,14 +11,39 @@ import (
 	"github.com/hashicorp/terraform-exec/tfexec"
 )
 
+type command string
+
+// type commands struct {
+// 	Plan    command
+// 	Apply   command
+// 	Destroy command
+// 	Show    command
+// }
+
+// func newCommands() *commands {
+// 	return &commands{
+// 		Plan: *Project.plan,
+// 	}
+// }
+
+const (
+	Plan    command = "plan"
+	Apply   command = "apply"
+	Destroy command = "destroy"
+	Show    command = "show"
+)
+
 type Terraform interface {
 	newTerraform() (*tfexec.Terraform, error)
-	Setup() error
-	Init() error
-	Plan() error
-	Apply() error
-	Destroy() error
-	Show() (string, error)
+	setup() error
+	init() error
+	setupVariables(...ProjectVars) error
+	validate() error
+	plan() error
+	apply() error
+	destroy() error
+	show() (string, error)
+	Run(cmd command)
 }
 
 type TfConfig struct {
@@ -28,12 +53,14 @@ type TfConfig struct {
 
 type Project struct {
 	Name      string
-	Variables []string
+	Variables ProjectVars
 	TfConfig  TfConfig
 	tfBin     *tfexec.Terraform
 }
 
 var _ Terraform = &Project{}
+
+type ProjectVars map[string]string
 
 func (p *Project) newTerraform() (*tfexec.Terraform, error) {
 	installer := &releases.ExactVersion{
@@ -62,7 +89,7 @@ func (p *Project) newTerraform() (*tfexec.Terraform, error) {
 	return tf, nil
 }
 
-func (p *Project) Setup() error {
+func (p *Project) setup() error {
 	log.Println("Setting up Terraform")
 
 	tf, err := p.newTerraform()
@@ -78,8 +105,8 @@ func (p *Project) Setup() error {
 	return nil
 }
 
-func (p *Project) Init() error {
-	log.Println("Initializing Terraform resources")
+func (p *Project) init() error {
+	log.Println("Initializing Terraform")
 
 	err := p.tfBin.Init(context.Background(), tfexec.Upgrade(true))
 
@@ -90,7 +117,23 @@ func (p *Project) Init() error {
 	return nil
 }
 
-func (p *Project) Plan() error {
+func (p *Project) setupVariables(vars ...ProjectVars) error {
+	log.Println("Setting up Project Variables")
+
+	for key, value := range p.Variables {
+		fmt.Println(key, value)
+	}
+
+	// setupVariablesFile
+
+	return nil
+}
+
+func (p *Project) validate() error {
+	return nil
+}
+
+func (p *Project) plan() error {
 	log.Println("Planning Terraform changes")
 
 	planFilePath := "./plan.out"
@@ -105,25 +148,24 @@ func (p *Project) Plan() error {
 	if err != nil {
 		log.Fatalf("error running ShowPlanFile: %s", err)
 	}
-
 	fmt.Printf("planFile: %v", planFile)
 
 	return nil
 }
 
-func (p *Project) Apply() error {
+func (p *Project) apply() error {
 	log.Println("Applying Terraform changes")
 
 	return nil
 }
 
-func (p *Project) Destroy() error {
+func (p *Project) destroy() error {
 	log.Println("Destroying Terraform resources")
 
 	return nil
 }
 
-func (p *Project) Show() (string, error) {
+func (p *Project) show() (string, error) {
 	log.Println("Showing state information")
 
 	state, err := p.tfBin.Show(context.Background())
@@ -138,4 +180,24 @@ func (p *Project) Show() (string, error) {
 	fmt.Println(state.FormatVersion) // "0.1"
 
 	return "", nil
+}
+
+func (p *Project) Run(cmd command) {
+	p.setup()
+	p.setupVariables()
+	p.init()
+
+	switch cmd {
+	case "plan":
+		p.plan()
+	case "apply":
+		p.plan()
+		p.apply()
+	case "destroy":
+		p.destroy()
+	case "show":
+		p.show()
+	default:
+		log.Println("Command not found.")
+	}
 }

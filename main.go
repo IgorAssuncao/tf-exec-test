@@ -1,21 +1,32 @@
 package main
 
 import (
+	"log"
+	"os"
 	"tf-exec/tf"
 )
 
 func main() {
 	project := &tf.Project{
-		Name:      "tf-exec-test",
-		Variables: []string{},
+		Name: "tf-exec-test",
 		TfConfig: tf.TfConfig{
 			Version:    "1.3.2",
 			WorkingDir: "./terraform/repositories/",
 		},
 	}
 
-	project.Setup()
-	project.Init()
-	project.Plan()
-	project.Show()
+	gh_token, ok := os.LookupEnv("GH_TOKEN")
+
+	if !ok {
+		log.Fatalln("GH_TOKEN not found in env")
+	}
+
+	variables := tf.ProjectVars{
+		"gh_token": gh_token,
+	}
+
+	project.Variables = variables
+
+	project.Run(tf.Plan)
+	project.Run(tf.Show)
 }

@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"strings"
+
+	// "os"
 
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
@@ -37,9 +41,9 @@ type Terraform interface {
 	newTerraform() (*tfexec.Terraform, error)
 	setup() error
 	init() error
-	setupVariables(...ProjectVars) error
+	setupVariables(string) (string, error)
 	validate() error
-	plan() error
+	plan(string) error
 	apply() error
 	destroy() error
 	show() (string, error)
@@ -83,6 +87,8 @@ func (p *Project) newTerraform() (*tfexec.Terraform, error) {
 	}
 
 	// tf.SetLog("DEBUG")
+	logger := log.Default()
+	tf.SetLogger(logger)
 
 	log.Println("Install Terraform successfully")
 
@@ -117,29 +123,42 @@ func (p *Project) init() error {
 	return nil
 }
 
-func (p *Project) setupVariables(vars ...ProjectVars) error {
+func (p *Project) setupVariables(path string) (string, error) {
 	log.Println("Setting up Project Variables")
 
-	for key, value := range p.Variables {
-		fmt.Println(key, value)
+	// varsFilePath := os.TempDir() + "/" + p.Name + "/variables.tfvars"
+
+	tfexecDir := strings.TrimSuffix(path, "/terraform")
+
+	varsFile, err := os.CreateTemp(tfexecDir, p.Name+".tfvars-")
+	if err != nil {
+		log.Fatalf("error running CreateTemp in setupVariables(): %s", err)
 	}
 
-	// setupVariablesFile
+	// defer varsFile.Close()
 
-	return nil
+	for key, value := range p.Variables {
+		varsFile.WriteString(key + " = " + "\"" + value + "\"\n")
+	}
+
+	log.Println("Set up Project Variables Successfull")
+
+	return varsFile.Name(), nil
 }
 
 func (p *Project) validate() error {
 	return nil
 }
 
-func (p *Project) plan() error {
+func (p *Project) plan(varsFile string) error {
 	log.Println("Planning Terraform changes")
 
 	planFilePath := "./plan.out"
 	outFile := tfexec.Out(planFilePath)
 
-	_, err := p.tfBin.Plan(context.Background(), outFile)
+	file := tfexec.VarFile(varsFile)
+
+	_, err := p.tfBin.Plan(context.Background(), outFile, file)
 	if err != nil {
 		log.Fatalf("error running Plan: %s", err)
 	}
@@ -184,14 +203,17 @@ func (p *Project) show() (string, error) {
 
 func (p *Project) Run(cmd command) {
 	p.setup()
-	p.setupVariables()
+	varsFile, err := p.setupVariables(p.tfBin.ExecPath())
+	if err != nil {
+		log.Fatalf("error in Run: %s", err)
+	}
 	p.init()
 
 	switch cmd {
 	case "plan":
-		p.plan()
+		p.plan(varsFile)
 	case "apply":
-		p.plan()
+		p.plan(varsFile)
 		p.apply()
 	case "destroy":
 		p.destroy()

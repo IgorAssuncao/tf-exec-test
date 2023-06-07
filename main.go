@@ -28,5 +28,6 @@ func main() {
 	project.Variables = variables
 
 	project.Run(tf.Plan)
-	project.Run(tf.Show)
+	// project.Run(tf.Show)
+	project.Run(tf.Destroy)
 }

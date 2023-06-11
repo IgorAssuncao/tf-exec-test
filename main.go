@@ -10,7 +10,7 @@ func main() {
 	project := &tf.Project{
 		Name: "tf-exec-test",
 		TfConfig: tf.TfConfig{
-			Version:    "1.3.2",
+			Version:    "1.4.6",
 			WorkingDir: "./terraform/repositories/",
 		},
 	}

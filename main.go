@@ -1,33 +1,38 @@
 package main
 
 import (
-	"log"
-	"os"
-	"tf-exec/tf"
+	// "log"
+	// "os"
+	// "tf-exec/tf"
+	"tf-exec/tf/api"
 )
 
 func main() {
-	project := &tf.Project{
-		Name: "tf-exec-test",
-		TfConfig: tf.TfConfig{
-			Version:    "1.4.6",
-			WorkingDir: "./terraform/repositories/",
-		},
-	}
+	app := api.CreateServer()
 
-	gh_token, ok := os.LookupEnv("GH_TOKEN")
+	app.Listen(":3000")
 
-	if !ok {
-		log.Fatalln("GH_TOKEN not found in env")
-	}
+	// project := &tf.Project{
+	// 	Name: "tf-exec-test",
+	// 	TfConfig: tf.TfConfig{
+	// 		Version:    "1.4.6",
+	// 		WorkingDir: "./terraform/repositories/",
+	// 	},
+	// }
 
-	variables := tf.ProjectVars{
-		"gh_token": gh_token,
-	}
+	// gh_token, ok := os.LookupEnv("GH_TOKEN")
 
-	project.Variables = variables
+	// if !ok {
+	// 	log.Fatalln("GH_TOKEN not found in env")
+	// }
 
-	project.Run(tf.Plan)
-	// project.Run(tf.Show)
-	project.Run(tf.Destroy)
+	// variables := tf.ProjectVars{
+	// 	"gh_token": gh_token,
+	// }
+
+	// project.Variables = variables
+
+	// project.Run(tf.Plan)
+	// // project.Run(tf.Show)
+	// project.Run(tf.Destroy)
 }
